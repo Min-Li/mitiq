@@ -1,15 +1,10 @@
 # Copyright (C) Unitary Fund
-# Portions of this code have been adapted from PennyLane's tutorial
-# on Classical Shadows.
-# Original authors: PennyLane developers: Brian Doolittle, Roeland Wiersema
-# Tutorial link: https://pennylane.ai/qml/demos/tutorial_classical_shadows
 #
 # This source code is licensed under the GPL license (v3) found in the
 # LICENSE file in the root directory of this source tree.
 
 """Quantum processing functions for classical shadows."""
-from typing import Tuple, Callable, Any, List
-
+from typing import Tuple, Callable, Any, List, Optional
 import cirq
 import numpy as np
 from numpy.typing import NDArray
@@ -45,7 +40,7 @@ def get_rotated_circuits(
     circuit: cirq.Circuit,
     pauli_strings: List[str],
     add_measurements: bool = True,
-    bitflip_ratio: float = 0.00,
+    qubits: Optional[List[cirq.Qid]] = None,
 ) -> List[cirq.Circuit]:
     """Returns a list of circuits that are identical to the input circuit,
     except that each one has single-qubit Clifford gates followed by
@@ -56,11 +51,11 @@ def get_rotated_circuits(
         circuit: The circuit to measure.
         pauli_strings: The Pauli strings to measure in each output circuit.
         add_measurements: Whether to add measurement gates to the circuit.
-
+        qubits: The qubits to measure. If None, all qubits in the circuit
     Returns:
          The list of circuits with rotation and measurement gates appended.
     """
-    qubits = sorted(list(circuit.all_qubits()))
+    qubits = sorted(list(circuit.all_qubits())) if qubits is None else qubits
     rotated_circuits = []
     for pauli_string in pauli_strings:
         rotated_circuit = circuit.copy()
@@ -77,10 +72,6 @@ def get_rotated_circuits(
                 assert (
                     pauli == "Z"
                 ), f"Pauli must be X, Y, Z. Got {pauli} instead."
-        if bitflip_ratio > 0.0:
-            rotated_circuit.append(
-                cirq.bit_flip(bitflip_ratio).on_each(*qubits)
-            )
         if add_measurements:
             rotated_circuit.append(cirq.measure(*qubits))
         rotated_circuits.append(rotated_circuit)
@@ -91,6 +82,7 @@ def random_pauli_measurement(
     circuit: cirq.Circuit,
     n_total_measurements: int,
     executor: Callable[[cirq.Circuit], MeasurementResult],
+    qubits: Optional[List[cirq.Qid]] = None,
 ) -> Tuple[NDArray[Any], NDArray[Any]]:
     r"""
     Given a circuit, perform random Pauli measurements on the circuit and
@@ -103,6 +95,7 @@ def random_pauli_measurement(
         n_total_measurements: number of snapshots.
         executor: A callable which runs a circuit and returns a single
             bitstring.
+        qubits: The qubits to measure. If None, all qubits in the circuit
 
     Warning:
         The ``executor`` must return a ``MeasurementResult``
@@ -118,17 +111,20 @@ def random_pauli_measurement(
         while each column corresponds to measurement outcomes
         and random Pauli measurement on a different qubit.
     """
-
-    num_qubits = len(circuit.all_qubits())
+    qubits = sorted(list(circuit.all_qubits())) if qubits is None else qubits
+    num_qubits = len(qubits)
     pauli_strings = generate_random_pauli_strings(
         num_qubits, n_total_measurements
     )
 
     # Rotate and attach measurement gates to the circuit
     rotated_circuits = get_rotated_circuits(
-        circuit,
-        pauli_strings,
+        circuit = circuit,
+        pauli_strings= pauli_strings,
+        add_measurements=True,
+        qubits=qubits,
     )
+
     if tqdm is not None:
         rotated_circuits = tqdm(
             rotated_circuits,
