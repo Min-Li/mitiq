@@ -7,7 +7,6 @@
 from typing import Tuple, Callable, Any, List, Optional
 import cirq
 import numpy as np
-from numpy.typing import NDArray
 
 try:
     from tqdm.auto import tqdm
@@ -83,12 +82,11 @@ def random_pauli_measurement(
     n_total_measurements: int,
     executor: Callable[[cirq.Circuit], MeasurementResult],
     qubits: Optional[List[cirq.Qid]] = None,
-) -> Tuple[NDArray[Any], NDArray[Any]]:
+) -> Tuple[List[str], List[str]]:
     r"""
     Given a circuit, perform random Pauli measurements on the circuit and
-    return outcomes. The outcomes are represented as a string where a
-    z-basis measurement outcome of :math:`|0\rangle` corresponds to 1, and
-    :math:`|1\rangle` corresponds to -1.
+    return outcomes. The outcomes are represented as a tuple of two lists of
+    strings.
 
     Args:
         circuit: Cirq circuit.
@@ -102,14 +100,13 @@ def random_pauli_measurement(
         for a single shot (i.e. a single bitstring).
 
     Returns:
-        Tuple of two numpy arrays. The first array contains
-        measurement outcomes (-1, 1) while the second array contains the
-        indices for the sampled Pauli's ("X", "Y", "Z").
-        This implies that local Clifford rotations plus z-basis measurements
-        are effectively equivalent to random Pauli measurements.
-        Each row of the arrays corresponds to a distinct snapshot or sample,
-        while each column corresponds to measurement outcomes
-        and random Pauli measurement on a different qubit.
+        Tuple of two list of string of length equals to`n_total_meausrements`,
+        where each element in the list is a string, with the following format:
+        strs in the 1st list: Circuit qubits computational basis
+            e.g. :math:`"01..":=|0\rangle|1\rangle..`.
+        strs in the 1st list: The local Pauli measurement performed on each
+            qubit. e.g."XY.." means perform local X-basis measurement on the
+            1st qubit, local Y-basis measurement the 2ed qubit in the circuit.
     """
     qubits = sorted(list(circuit.all_qubits())) if qubits is None else qubits
     num_qubits = len(qubits)
@@ -119,8 +116,8 @@ def random_pauli_measurement(
 
     # Rotate and attach measurement gates to the circuit
     rotated_circuits = get_rotated_circuits(
-        circuit = circuit,
-        pauli_strings= pauli_strings,
+        circuit=circuit,
+        pauli_strings=pauli_strings,
         add_measurements=True,
         qubits=qubits,
     )
@@ -135,7 +132,6 @@ def random_pauli_measurement(
         executor(rotated_circuit) for rotated_circuit in rotated_circuits
     ]
 
-    # Transform the outcomes into a numpy array 0 -> 1, 1 -> -1.
     shadow_outcomes = []
     for result in results:
         bitstring = list(result.get_counts().keys())[0]
@@ -144,11 +140,6 @@ def random_pauli_measurement(
                 "The `executor` must return a `MeasurementResult` "
                 "for a single shot"
             )
+        shadow_outcomes.append(bitstring)
 
-        outcome = [1 - int(i) * 2 for i in bitstring]
-        shadow_outcomes.append(outcome)
-
-    shadow_outcomes_np = np.asarray(shadow_outcomes, dtype=int)
-    pauli_strings_np = np.asarray(pauli_strings, dtype=str)
-
-    return shadow_outcomes_np, pauli_strings_np
+    return shadow_outcomes, pauli_strings

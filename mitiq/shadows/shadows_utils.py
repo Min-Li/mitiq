@@ -54,22 +54,25 @@ def operator_ptm_vector_rep(O: NDArray[Any]) -> NDArray[Any]:
         O_vec.append(np.trace(O @ kron_product) * np.sqrt(1 / 2**num_qubits))
     return np.array(O_vec)
 
-def eigenvalues_to_bitstring(values):
+
+def eigenvalues_to_bitstring(values: List[int]) -> str:
     """Converts eigenvalues to bitstring. e.g., [-1,1,1] -> '100'"""
     return "".join(["1" if v == -1 else "0" for v in values])
 
 
-def bitstring_to_eigenvalues(bitstring):
+def bitstring_to_eigenvalues(bitstring: str) -> List[int]:
     """Converts bitstring to eigenvalues. e.g., '100' -> [-1,1,1]"""
-    return np.array([1 if b == "0" else -1 for b in bitstring])
+    return [1 if b == "0" else -1 for b in bitstring]
 
-def create_string(n:int, loc_list:List[int])->str:
+
+def create_string(n: int, loc_list: List[int]) -> str:
     """
     This function returns a string of length n with 1s at the locations
     specified by loc_list and 0s elsewhere.
     """
     loc_set = set(loc_list)  # Convert list to set for efficient lookups
-    return ''.join(map(lambda i: '1' if i+1 in loc_set else '0', range(n)))
+    return "".join(map(lambda i: "1" if i in loc_set else "0", range(n)))
+
 
 def n_measurements_tomography_bound(epsilon: float, num_qubits: int) -> int:
     """
