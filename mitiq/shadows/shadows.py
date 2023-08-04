@@ -38,6 +38,10 @@ def pauli_twirling_calibrate(
         k_calibration: Number of groups of "median of means" used for calibration.
         num_total_measurements_calibration: Number of shots per group of
             "median of means" used for calibration.
+        locality: The locality of the operator, whose expectation value is
+            going to be estimated by the classical shadow. e.g. if operator is
+            Ising model Hamiltonian with nearist neighbour interacting, then
+            locality = 2.
     Returns:
         A dictionary containing the calibration outcomes.
     """
@@ -58,7 +62,6 @@ def shadow_quantum_processing(
     circuit: cirq.Circuit,
     executor: Callable[[cirq.Circuit], MeasurementResult],
     num_total_measurements_shadow: int,
-    *,
     random_seed: Optional[int] = None,
 ) -> Tuple[List[str], List[str]]:
     r"""
@@ -69,24 +72,24 @@ def shadow_quantum_processing(
         circuit: The circuit to execute.
         executor: The function to use to do quantum measurement,
             must be same as executor in `pauli_twirling_calibrate`.
-        num_total_measurements_shadow: Total number of shots for shadow estimation.
-        k_shadows: Number of groups of "median of means" used for shadow
+        num_total_measurements_shadow: Total number of shots for shadow
             estimation.
         random_seed: The random seed to use for the shadow measurements.
 
     Returns:
         A dictionary containing the bit strings, the Pauli strings
         `bit_strings`: Circuit qubits computational basis
-            e.g. :math:`"01..":=|0\rangle|1\rangle..`.
+        e.g. :math:`"01..":=|0\rangle|1\rangle..`.
         `pauli_strings`: The local Pauli measurement performed on each
-            qubit. e.g."XY.." means perform local X-basis measurement on the
-            1st qubit, local Y-basis measurement the 2ed qubit in the circuit.
+        qubit. e.g."XY.." means perform local X-basis measurement on the
+        1st qubit, local Y-basis measurement the 2ed qubit in the circuit.
     """
     if random_seed is not None:
         np.random.seed(random_seed)
     r"""
-    Stage 1: Sample random unitary form :math:`\mathcal{g}\subset U(2^n)` and
-    perform computational basis measurement
+    Shadow stage 1: Sample random unitary form
+    :math:`\mathcal{g}\subset U(2^n)` and perform computational
+    basis measurement
     """
     # random Pauli measurement on the circuit
     output = random_pauli_measurement(
@@ -114,6 +117,8 @@ def classical_post_processing(
         rshadows: Whether to use the calibration results.
         calibration_results: The output of function `pauli_twirling_calibrate`.
         observables: The set of observables to measure.
+        k_shadows: Number of groups of "median of means" used for shadow
+            estimation of expectation values.
         state_reconstruction: Whether to reconstruct the state or estimate
             the expectation value of the observables.
 
@@ -126,10 +131,14 @@ def classical_post_processing(
     """
 
     if rshadows:
-        assert calibration_results is not None
+        if calibration_results is None:
+            raise ValueError(
+                "Calibration results cannot be None when rshadows"
+            )
+
     """
-    Stage 2: Estimate the expectation value of the observables OR reconstruct
-    the state
+    Shadow stage 2: Estimate the expectation value of the observables OR
+    reconstruct the state
     """
     output: Dict[str, Union[float, NDArray[Any]]] = {}
     if state_reconstruction:
