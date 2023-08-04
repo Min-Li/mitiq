@@ -256,9 +256,9 @@ def test_expectation_estimation_shadow_cal():
     }
 
     measurement_outcomes = b_lists, u_lists
-    observable = mitiq.PauliString("YXZZ", support=(0,1,2,3))
+    observable = mitiq.PauliString("YXZZ", support=(0, 1, 2, 3))
     k = 1
-    expected_result = 81/2
+    expected_result = 81 / 2
     print("expected_result", expected_result)
 
     result = expectation_estimation_shadow(
