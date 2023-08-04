@@ -13,7 +13,7 @@ from typing import Tuple, List, Any
 import numpy as np
 from numpy.typing import NDArray
 import cirq
-
+from scipy.linalg import sqrtm
 import mitiq
 
 from itertools import product
@@ -72,6 +72,7 @@ def create_string(n: int, loc_list: List[int]) -> str:
     """
     loc_set = set(loc_list)  # Convert list to set for efficient lookups
     return "".join(map(lambda i: "1" if i in loc_set else "0", range(n)))
+
 
 
 def n_measurements_tomography_bound(epsilon: float, num_qubits: int) -> int:
@@ -144,16 +145,28 @@ def n_measurements_opts_expectation_bound(
 
 
 def fidelity(
-    state_vector: NDArray[np.complex64],
+    sigma: NDArray[np.complex64],
     rho: NDArray[np.complex64],
 ) -> float:
     """
-    Calculate the fidelity between a state vector and a density matrix.
+    fidelity is a measure of the "closeness" of two quantum states.
+    It expresses the probability that one state will pass a test to
+    identify as the other. 
     Args:
-        state_vector: The vector whose norm we want to calculate.
-        rho: The operator whose norm we want to calculate.
+        sigma: Quantum state.
+        rho: Quantum state
 
     Returns:
         Scalar corresponding to the fidelity.
     """
-    return np.reshape(state_vector.conj().T @ rho @ state_vector, -1).real[0]
+    if sigma.ndim ==1 and rho.ndim == 1:
+        val = np.abs(np.dot(sigma.conj(), rho))**2.0
+    elif sigma.ndim == 1 and rho.ndim == 2:
+        val = np.abs(sigma.conj().T @ rho @ sigma)
+    elif sigma.ndim == 2 and rho.ndim == 1:
+        val = np.abs(rho.conj().T @ sigma @ rho)
+    elif sigma.ndim == 2 and rho.ndim == 2:
+        val = np.abs(np.trace(sqrtm(sigma) @ rho @ sqrtm(sigma)))
+    else:
+        raise ValueError("Invalid input dimensions")
+    return float(val)

@@ -25,6 +25,7 @@ def pauli_twirling_calibrate(
     executor: Callable[[cirq.Circuit], MeasurementResult],
     num_total_measurements_calibration: int = 20000,
     k_calibration: int = 1,
+    locality: Optional[int] = None,
 ) -> Dict[str, complex]:
     r"""
     This function returns the dictionary of the median of means estimation
@@ -50,7 +51,7 @@ def pauli_twirling_calibrate(
         qubits=qubits,
     )
     # get the median of means estimation of Pauli fidelities
-    return get_pauli_fidelity(calibration_measurement_outcomes, k_calibration)
+    return get_pauli_fidelity(calibration_measurement_outcomes, k_calibration, locality=locality)
 
 
 def shadow_quantum_processing(
