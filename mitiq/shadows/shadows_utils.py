@@ -74,6 +74,7 @@ def create_string(n: int, loc_list: List[int]) -> str:
     return "".join(map(lambda i: "1" if i in loc_set else "0", range(n)))
 
 
+
 def n_measurements_tomography_bound(epsilon: float, num_qubits: int) -> int:
     """
     This function returns the minimum number of classical shadows required
@@ -150,7 +151,7 @@ def fidelity(
     """
     fidelity is a measure of the "closeness" of two quantum states.
     It expresses the probability that one state will pass a test to
-    identify as the other.
+    identify as the other. 
     Args:
         sigma: Quantum state.
         rho: Quantum state
@@ -158,8 +159,8 @@ def fidelity(
     Returns:
         Scalar corresponding to the fidelity.
     """
-    if sigma.ndim == 1 and rho.ndim == 1:
-        val = np.abs(np.dot(sigma.conj(), rho)) ** 2.0
+    if sigma.ndim ==1 and rho.ndim == 1:
+        val = np.abs(np.dot(sigma.conj(), rho))**2.0
     elif sigma.ndim == 1 and rho.ndim == 2:
         val = np.abs(sigma.conj().T @ rho @ sigma)
     elif sigma.ndim == 2 and rho.ndim == 1:

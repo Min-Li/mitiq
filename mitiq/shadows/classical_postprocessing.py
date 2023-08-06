@@ -36,29 +36,20 @@ zero_state = b_zero.T @ b_zero
 b_one = np.array([[0.0 + 0.0j, 1.0 + 0.0j]])
 one_state = b_one.T @ b_one
 
-# F_LOCAL_MAP is based on local Pauli fidelity of qubit i
-# f_b_i = <<b_i|U_i|P_z^b_i>>
-# s.t. f_0 = U_11U_11^* + U_12U_12^*, f_1 = U_21U_21^* + U_22U_22^*
+#F_LOCAL_MAP is based on local Pauli fidelity of qubit i
+#f_b_i = <<b_i|U_i|P_z^b_i>>
+#s.t. f_0 = U_11U_11^* + U_12U_12^*, f_1 = U_21U_21^* + U_22U_22^*
 p_z = cirq.Z._unitary_()
-F_LOCAL_MAP = {
-    "0X": 0.0,
-    "0Y": 0.0,
-    "0Z": 1.0,
-    "1X": 0.0,
-    "1Y": 0.0,
-    "1Z": -1.0,
-}
+F_LOCAL_MAP = {"0X": 0.,"0Y": 0.,"0Z": 1.,"1X": 0.,"1Y": 0.,"1Z": -1.}
 
 """
 The following functions are used in the classical post-processing
 of calibration
 """
 
-
 def get_single_shot_pauli_fidelity(
-    bit_string: str,
-    pauli_string: str,
-    locality: Optional[int] = None,
+        bit_string: str, pauli_string: str,
+        locality: Optional[int] = None,
 ) -> Dict[str, float]:
     r"""
     Calculate Pauli fidelity for a single shot measurement of the calibration
@@ -91,17 +82,15 @@ def get_single_shot_pauli_fidelity(
         locality = num_qubits
     # local_pauli_fidelity is a list of local Pauli fidelity for each qubit
     local_pauli_fidelity = np.array(
-        [F_LOCAL_MAP[b + u] for b, u in zip(bit_string, pauli_string)]
-    )
+        [F_LOCAL_MAP[b + u] for b, u in zip(bit_string, pauli_string)])
     # f_est is a dictionary of Pauli fidelity for each b_string
-    f_est = {create_string(num_qubits, []): 1.0}
+    f_est = {create_string(num_qubits, []): 1.}
     for w in range(1, locality + 1):
         target_locs = np.array(list(combinations(range(num_qubits), w)))
         single_round_pauli_fidelity = np.prod(
-            local_pauli_fidelity[target_locs], axis=1
-        )
+            local_pauli_fidelity[target_locs], axis=1)
         for loc, fidelity in zip(target_locs, single_round_pauli_fidelity):
-            # b_str is a string of length n with maximum number of w 1s.
+            #b_str is a string of length n with maximum number of w 1s.
             b_str = create_string(num_qubits, loc)
             f_est[b_str] = fidelity
 
@@ -109,9 +98,9 @@ def get_single_shot_pauli_fidelity(
 
 
 def get_pauli_fidelity(
-    calibration_measurement_outcomes: Tuple[List[str], List[str]],
-    k_calibration: int,
-    locality: Optional[int] = None,
+        calibration_measurement_outcomes: Tuple[List[str], List[str]],
+        k_calibration: int,
+        locality: Optional[int] = None,
 ) -> Dict[str, complex]:
     r"""
     Calculate Pauli fidelity for a perticular
@@ -133,7 +122,8 @@ def get_pauli_fidelity(
     # number of measurements in each split
     n_total_measurements = len(b_lists)
 
-    means: Dict[str, List[float]] = {}  # key is bitstring, value is mean
+    means: Dict[str, List[float]] = {
+    }  # key is bitstring, value is mean
 
     group_idxes = np.array_split(
         np.arange(n_total_measurements), k_calibration
@@ -147,9 +137,8 @@ def get_pauli_fidelity(
         group_results = []
         for j in range(n_group_measurements):
             bitstring, u_list = b_lists_k[j], u_lists_k[j]
-            f_est = get_single_shot_pauli_fidelity(
-                bitstring, u_list, locality=locality
-            )
+            f_est = get_single_shot_pauli_fidelity(bitstring, u_list,
+                                                   locality=locality)
             group_results.append(f_est)
 
         f_est_group = {
@@ -196,10 +185,10 @@ pi_one = np.diag(pi_one)
 
 
 def classical_snapshot(
-    b_list_shadow: str,
-    u_list_shadow: str,
-    pauli_twirling_calibration: bool,
-    f_est: Optional[Dict[str, float]] = None,
+        b_list_shadow: str,
+        u_list_shadow: str,
+        pauli_twirling_calibration: bool,
+        f_est: Optional[Dict[str, float]] = None,
 ) -> NDArray[Any]:
     r"""
     Implement a single snapshot state reconstruction
@@ -227,7 +216,7 @@ def classical_snapshot(
                 "twirling calibration."
             )
         elements = []
-        # normalize_factor = get_normalize_factor(f_est)
+        #normalize_factor = get_normalize_factor(f_est)
         # get b_list and f for each calibration measurement
         for b_list_cal, f in f_est.items():
             pi_snapshot_vecter = []
@@ -245,7 +234,7 @@ def classical_snapshot(
             elements.append(1 / f * kronecker_product(pi_snapshot_vecter))
         rho_snapshot_vector = np.sum(elements, axis=0)
         # normalize the snapshot state
-        rho_snapshot = rho_snapshot_vector  # * normalize_factor
+        rho_snapshot = rho_snapshot_vector  #* normalize_factor
     # w/o calibration, noted here, the output in terms of matrix,
     # not in PTM rep.
     else:
@@ -262,9 +251,9 @@ def classical_snapshot(
 
 
 def shadow_state_reconstruction(
-    shadow_measurement_outcomes: Tuple[List[str], List[str]],
-    pauli_twirling_calibration: bool,
-    f_est: Optional[Dict[str, float]] = None,
+        shadow_measurement_outcomes: Tuple[List[str], List[str]],
+        pauli_twirling_calibration: bool,
+        f_est: Optional[Dict[str, float]] = None,
 ) -> NDArray[Any]:
     """Reconstruct a state approximation as an average over all snapshots.
 
@@ -288,19 +277,19 @@ def shadow_state_reconstruction(
                 b_list_shadow, u_list_shadow, pauli_twirling_calibration, f_est
             )
             for b_list_shadow, u_list_shadow in zip(
-                b_lists_shadow, u_lists_shadow
-            )
+            b_lists_shadow, u_lists_shadow
+        )
         ],
         axis=0,
     )
 
 
 def expectation_estimation_shadow(
-    measurement_outcomes: Tuple[List[str], List[str]],
-    pauli_str: mitiq.PauliString,  # type: ignore
-    k_shadows: int,
-    pauli_twirling_calibration: bool,
-    f_est: Optional[Dict[str, float]] = None,
+        measurement_outcomes: Tuple[List[str], List[str]],
+        pauli_str: mitiq.PauliString,  # type: ignore
+        k_shadows: int,
+        pauli_twirling_calibration: bool,
+        f_est: Optional[Dict[str, float]] = None,
 ) -> float:
     """Calculate the expectation value of an observable from classical shadows.
     Use median of means to ameliorate the effects of outliers.
@@ -378,7 +367,7 @@ def expectation_estimation_shadow(
                 else:
                     # product becomes an array of snapshots expectation values
                     # witch satisfy condition (1) and (2)
-                    product = (1.0 / f_val) * product
+                    product = (1.0 / f_val) * product  
             else:
                 product = 3 ** (target_support.count("1")) * product
 
