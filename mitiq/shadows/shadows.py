@@ -63,6 +63,7 @@ def shadow_quantum_processing(
     executor: Callable[[cirq.Circuit], MeasurementResult],
     num_total_measurements_shadow: int,
     random_seed: Optional[int] = None,
+    qubits: Optional[List[cirq.Qid]] = None,
 ) -> Tuple[List[str], List[str]]:
     r"""
     Executes a circuit with classical shadows. This function can be used for
@@ -96,6 +97,7 @@ def shadow_quantum_processing(
         circuit,
         n_total_measurements=num_total_measurements_shadow,
         executor=executor,
+        qubits=qubits,
     )
     return output
 
